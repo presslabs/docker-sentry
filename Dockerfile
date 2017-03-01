@@ -1,4 +1,4 @@
 FROM sentry:onbuild
-MAINTAINER Alexandru Rosianu <me@aluxian.com>
+MAINTAINER Presslabs <ping@presslabs.com>
 
-RUN pip install sentry-github
+RUN pip install sentry-plugins
