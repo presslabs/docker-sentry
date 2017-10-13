@@ -2,19 +2,12 @@
 # you can inherit and tweak settings to your hearts content.
 
 # For Docker, the following environment variables are supported:
-#  SENTRY_POSTGRES_HOST
-#  SENTRY_POSTGRES_PORT
-#  SENTRY_DB_NAME
-#  SENTRY_DB_USER
-#  SENTRY_DB_PASSWORD
+#  SENTRY_DB_CONNECT_URL
+#  SENTRY_REDIS_CONNECT_URL
 #  SENTRY_RABBITMQ_HOST
 #  SENTRY_RABBITMQ_USERNAME
 #  SENTRY_RABBITMQ_PASSWORD
 #  SENTRY_RABBITMQ_VHOST
-#  SENTRY_REDIS_HOST
-#  SENTRY_REDIS_PASSWORD
-#  SENTRY_REDIS_PORT
-#  SENTRY_REDIS_DB
 #  SENTRY_MEMCACHED_HOST
 #  SENTRY_MEMCACHED_PORT
 #  SENTRY_FILESTORE_DIR
@@ -37,32 +30,32 @@ from sentry.conf.server import *  # NOQA
 
 import os
 import os.path
+from urlparse import urlparse
 
 CONF_ROOT = os.path.dirname(__file__)
 
-postgres = env('SENTRY_POSTGRES_HOST') or (env('POSTGRES_PORT_5432_TCP_ADDR') and 'postgres')
-if postgres:
+postgres_url = env('SENTRY_DB_CONNECT_URL') or ''
+
+if postgres_url:
+    url = urlparse(postgres_url)
     DATABASES = {
         'default': {
             'ENGINE': 'sentry.db.postgres',
             'NAME': (
-                env('SENTRY_DB_NAME')
-                or env('POSTGRES_ENV_POSTGRES_USER')
+                url.path.strip('/')
                 or 'postgres'
             ),
             'USER': (
-                env('SENTRY_DB_USER')
-                or env('POSTGRES_ENV_POSTGRES_USER')
+                url.username
                 or 'postgres'
             ),
             'PASSWORD': (
-                env('SENTRY_DB_PASSWORD')
-                or env('POSTGRES_ENV_POSTGRES_PASSWORD')
+                url.password
                 or ''
             ),
-            'HOST': postgres,
+            'HOST': url.hostname or 'postgres',
             'PORT': (
-                env('SENTRY_POSTGRES_PORT')
+                url.port
                 or ''
             ),
             'OPTIONS': {
@@ -93,23 +86,21 @@ SENTRY_SINGLE_ORGANIZATION = env('SENTRY_SINGLE_ORGANIZATION', True)
 # Generic Redis configuration used as defaults for various things including:
 # Buffers, Quotas, TSDB
 
-redis = env('SENTRY_REDIS_HOST') or (env('REDIS_PORT_6379_TCP_ADDR') and 'redis')
-if not redis:
-    raise Exception('Error: REDIS_PORT_6379_TCP_ADDR (or SENTRY_REDIS_HOST) is undefined, did you forget to `--link` a redis container?')
+redis_url = env('SENTRY_REDIS_CONNECT_URL')
+if not redis_url:
+    raise Exception('Error: SENTRY_REDIS_CONNECT_URL is undefined, did you forget to `--link` a redis container?')
 
-redis_password = env('SENTRY_REDIS_PASSWORD') or ''
-redis_port = env('SENTRY_REDIS_PORT') or '6379'
-redis_db = env('SENTRY_REDIS_DB') or '0'
+redis_url = urlparse(redis_url)
 
 SENTRY_OPTIONS.update({
     'redis.clusters': {
         'default': {
             'hosts': {
                 0: {
-                    'host': redis,
-                    'password': redis_password,
-                    'port': redis_port,
-                    'db': redis_db,
+                    'host': redis_url.hostname,
+                    'password': redis_url.password,
+                    'port': redis_url.port,
+                    'db': redis_url.path.strip('/')
                 },
             },
         },
@@ -167,7 +158,7 @@ if rabbitmq:
         )
     )
 else:
-    BROKER_URL = 'redis://:' + redis_password + '@' + redis + ':' + redis_port + '/' + redis_db
+    BROKER_URL = redis_url.geturl()
 
 
 ###############
@@ -296,14 +287,14 @@ if 'SENTRY_RUNNING_UWSGI' not in os.environ and len(secret_key) < 32:
 
 SENTRY_OPTIONS['system.secret-key'] = secret_key
 
-if 'GITHUB_APP_ID' in os.environ:
+if 'SENTRY_GITHUB_APP_ID' in os.environ:
     GITHUB_EXTENDED_PERMISSIONS = ['repo']
-    GITHUB_APP_ID = env('GITHUB_APP_ID')
-    GITHUB_API_SECRET = env('GITHUB_API_SECRET')
+    GITHUB_APP_ID = env('SENTRY_GITHUB_APP_ID')
+    GITHUB_API_SECRET = env('SENTRY_GITHUB_API_SECRET')
 
-if 'BITBUCKET_CONSUMER_KEY' in os.environ:
-    BITBUCKET_CONSUMER_KEY = env('BITBUCKET_CONSUMER_KEY')
-    BITBUCKET_CONSUMER_SECRET = env('BITBUCKET_CONSUMER_SECRET')
+if 'SENTRY_BITBUCKET_CONSUMER_KEY' in os.environ:
+    BITBUCKET_CONSUMER_KEY = env('SENTRY_BITBUCKET_CONSUMER_KEY')
+    BITBUCKET_CONSUMER_SECRET = env('SENTRY_BITBUCKET_CONSUMER_SECRET')
 
 
 # Presslabs customizations
