@@ -287,10 +287,12 @@ if 'SENTRY_RUNNING_UWSGI' not in os.environ and len(secret_key) < 32:
 
 SENTRY_OPTIONS['system.secret-key'] = secret_key
 
-if 'SENTRY_GITHUB_APP_ID' in os.environ:
+print 'GITHUB before!'
+if 'GITHUB_APP_ID' in os.environ:
     GITHUB_EXTENDED_PERMISSIONS = ['repo']
-    GITHUB_APP_ID = env('SENTRY_GITHUB_APP_ID')
-    GITHUB_API_SECRET = env('SENTRY_GITHUB_API_SECRET')
+    GITHUB_APP_ID = env('GITHUB_APP_ID')
+    GITHUB_API_SECRET = env('GITHUB_API_SECRET')
+    print 'GITHUB CONF: ID: %s1 SEC: %s3t' % (GITHUB_APP_ID, GITHUB_API_SECRET)
 
 if 'SENTRY_BITBUCKET_CONSUMER_KEY' in os.environ:
     BITBUCKET_CONSUMER_KEY = env('SENTRY_BITBUCKET_CONSUMER_KEY')
