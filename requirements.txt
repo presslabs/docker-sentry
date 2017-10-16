@@ -1,1 +1,1 @@
-sentry-plugins
+https://github.com/getsentry/sentry-auth-github/archive/master.zip
