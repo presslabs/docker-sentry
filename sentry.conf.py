@@ -301,7 +301,3 @@ if 'BITBUCKET_CONSUMER_KEY' in os.environ:
 
 SENTRY_OPTIONS['system.url-prefix'] = env('SENTRY_URL_PREFIX') or 'localhost'
 SENTRY_FEATURES['auth:register'] = False
-SENTRY_WEB_OPTIONS = {
-    'protocol': 'uwsgi',
-    'workers': 8
-}
