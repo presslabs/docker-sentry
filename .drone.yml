@@ -1,0 +1,29 @@
+pipeline:
+  publish-docker-image:
+    image: plugins/docker
+    mirror: https://mirror.gcr.io
+    registry: gcr.io
+    repo: gcr.io/pl-infra/sentry
+    username: _json_key
+    tags: ["${DRONE_BRANCH/master/latest}", "${DRONE_COMMIT_SHA:0:7}"]
+    force_tag: true
+    build_args:
+      - release="${DRONE_COMMIT_SHA:0:7}"
+    secrets:
+      - source: GOOGLE_CREDENTIALS
+        target: DOCKER_PASSWORD
+    when:
+      event: push
+
+  deploy-on-stage:
+    image: gcr.io/pl-infra/kluster-deploy:latest
+    pull: true
+    secrets:
+      - GOOGLE_CREDENTIALS
+    commands:
+      - /usr/local/bin/setup-credentials-helper.sh
+      - cd /src/production/sentry
+      - make HELM_ARGS="--set image=gcr.io/pl-infra/sentry:${DRONE_COMMIT_SHA:0:7}"
+    when:
+      branch: master
+
