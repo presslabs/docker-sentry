@@ -15,7 +15,7 @@ pipeline:
     when:
       event: push
 
-  deploy-on-stage:
+  deploy-on-production:
     image: gcr.io/pl-infra/kluster-deploy:latest
     pull: true
     secrets:
