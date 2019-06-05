@@ -1,2 +1,2 @@
-FROM sentry:8.21.0-onbuild
+FROM sentry:9.1.1-onbuild
 MAINTAINER Presslabs <ping@presslabs.com>
