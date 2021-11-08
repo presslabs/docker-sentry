@@ -1,29 +1,48 @@
-pipeline:
-  publish-docker-image:
-    image: plugins/docker
+---
+kind: pipeline
+name: default
+
+platform:
+  os: linux
+  arch: amd64
+
+steps:
+- name: publish-docker-image
+  pull: if-not-exists
+  image: plugins/docker
+  settings:
+    build_args:
+    - release="${DRONE_COMMIT_SHA:0:7}"
+    force_tag: true
     mirror: https://mirror.gcr.io
     registry: gcr.io
     repo: gcr.io/pl-infra/sentry
+    tags:
+    - ${DRONE_BRANCH/master/latest}
+    - ${DRONE_COMMIT_SHA:0:7}
     username: _json_key
-    tags: ["${DRONE_BRANCH/master/latest}", "${DRONE_COMMIT_SHA:0:7}"]
-    force_tag: true
-    build_args:
-      - release="${DRONE_COMMIT_SHA:0:7}"
-    secrets:
-      - source: GOOGLE_CREDENTIALS
-        target: DOCKER_PASSWORD
-    when:
-      event: push
+  environment:
+    DOCKER_PASSWORD:
+      from_secret: PL_INFRA_GCR_IO_PUSH
+  when:
+    event:
+    - push
 
-  deploy-on-production:
-    image: gcr.io/pl-infra/kluster-deploy:latest
-    pull: true
-    secrets:
-      - GOOGLE_CREDENTIALS
-    commands:
-      - /usr/local/bin/setup-credentials-helper.sh
-      - cd /src/production/sentry
-      - make HELM_ARGS="--set image=gcr.io/pl-infra/sentry:${DRONE_COMMIT_SHA:0:7}"
-    when:
-      branch: master
+#- name: deploy-on-production
+#  pull: always
+#  image: gcr.io/pl-infra/kluster-deploy:latest
+#  commands:
+#  - /usr/local/bin/setup-credentials-helper.sh
+#  - cd /src/production/sentry
+#  - make HELM_ARGS="--set image=gcr.io/pl-infra/sentry:${DRONE_COMMIT_SHA:0:7}"
+#  environment:
+#    GOOGLE_CREDENTIALS:
+#      from_secret: GOOGLE_CREDENTIALS
+#  when:
+#    branch:
+#    - master
+---
+kind: signature
+hmac: 1adcd8fd28f437ac16a0812ecf1ef360c31024d3a5acb2c65da0c735a1c38aad
 
+...
